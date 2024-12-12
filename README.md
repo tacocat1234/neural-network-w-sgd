@@ -30,7 +30,9 @@ std::initializer_list<ActivationPair> layerActivations: Activation function pair
 LossFunction lossFunction: Function pointer for the loss function.
 LossFunction lossDerivative: Function pointer for the derivative of the loss function.
 double learningRate: A hyperparameter determining the step size during gradient descent.
+
 ---example---
+
 NeuralNetwork net(
     {2, 3, 2},
     {{sigmoid, sigmoidDerivative}, {tanh, tanhDerivative}, {relu, reluDerivative}},
@@ -41,7 +43,9 @@ NeuralNetwork net(
 
 Training
 The train method trains the neural network on the provided dataset:
+
 ---example---
+
 neuralNetwork.train(TrainingData data, int batchSize = -1);
 
 TrainingData: A collection of input-output pairs (std::unordered_map<std::vector<double>, std::vector<double>>).
@@ -49,7 +53,9 @@ batchSize: Determines whether to use SGD (1), full-batch gradient descent (data.
 
 Evaluation
 Use the evaluate function to generate predictions from input data:
+
 ---example---
+
 std::vector<double> result = neuralNetwork.evaluate(std::vector<double> inputs);
 
 NeuralNetwork Class
