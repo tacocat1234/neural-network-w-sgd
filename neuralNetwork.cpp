@@ -1,6 +1,5 @@
 #include "neuralNetwork.h"
-#include <random>
-#include <cmath>
+
 
 using Weights = std::vector<double>;
 using LayerWeights = std::vector<Weights>;
@@ -92,35 +91,55 @@ void NeuralNetwork::backPropogate(TrainingSample data){
 
     evaluate(inputs);
 
-    std::vector<LayerValues> preActGradients; //temp, for ease of computing, equivalent to bias
+    LayerValues prevWSumGradients; //previous weighted sum gradients
+    LayerValues currentWSumGradients = std::vector<double>(layerSizes[layerSizes.size() - 1], 0.0); //current weighted sum gradients
     double curWeightGradient
 
     std::vector<double> lossGradients = lossDerivative(output(), expectedOut);
 
-    preActGradients.resize(layerSizes.size(), std::vector<double>{});
-
-    for (int i = layerSizes.size() - 1; i >= 0; i--){ //for each layer, backwards
-
-        preActGradients[i].resize(layerSizes[i], 0);
+    for (int i = layerSizes.size() - 1; i >= 0; i--){ //for each layer, backward
 
         for (int j = 0; j < layerSizes[i]; j++){ //for each node in layer
 
             if (i != layerSizes.size() - 1) {
                 for (int k = 0; k < layerSizes[i + 1]; k++) {//for each in next layer
-                    preActGradients[i][j] += preActGradients[i + 1][k] * nodes[i + 1][k].getWeights()[&(nodes[i][j])]; //multiply prevDv * weight i+1, k to i, j, or prevDv * ∂nextPreAct/∂curPostAct
+                    currentWSumGradients[i] += prevWSumGradients[k] * nodes[i + 1][k].getWeights()[&(nodes[i][j])];
                 }//            ___  * ∂a_n/∂z_n (activationDerivative(z))
-                preActGradients[i][j] *= layerActivationDerivatives[i](nodes[i][j].getWeightedSum()); //multiply by ∂a_n/∂preAct_n
+                currentWSumGradients[j] *= layerActivationDerivatives[i](nodes[i][j].getWeightedSum()); //multiply by ∂a_n/∂preAct_n
             } else {
-                preActGradients[i][j] = lossGradients[i] * layerActivationDerivatives[i](nodes[i][j].getWeightedSum()); //partial derivative of loss w/resp. preActivation val of node in output layer1`
+                currentWSumGradients[j] = lossGradients[i] * layerActivationDerivatives[i](nodes[i][j].getWeightedSum()); //partial derivative of loss w/resp. preActivation val of node in output layer1`
             }
-            nodes[i][j].updateBias(preActGradients[i][j] * learningRate);
+            nodes[i][j].updateBias(currentWSumGradients[i] * learningRate);
 
             if (i > 0){
                 for (int k = 0; k < layerSizes[i - 1]; k++){ //for each node in incomingLayer, i.e. for each weight to the node
-                    curWeightGradient = preActGradients[i][j] * nodes[i - 1][k].getValue();
+                    curWeightGradient = currentWSumGradients[j] * nodes[i - 1][k].getValue(); //derivative w/respect current node z * derivative of curNode z w/r w from i-1,k 
                     nodes[i][j].updateWeight(curWeightGradient * learningRate, &(nodes[i - 1][k])); //update weight from i-1,k to i,j by weightGradients * learnignRate
                 }
             }
         }
+        prevWSumGradients = currentWSumGradients;
+        currentWSumGradients = std::vector<double>(layerSizes[i - 1], 0.0); //clear, set size to next layer in loop (prev layer in network)
     }
 }//bias gradients are equivalent to the preActivation gradients at any node n
+
+void NeuralNetwork::train(TrainingData data, int batchSize){
+    if (batchSize <= 0 || batchSize > data.size()) {
+        batchSize = data.size(); // Use all data if batchSize is invalid
+    }
+    std::vector<TrainingSample> samples(data.begin(), data.end()); //conver to vector
+
+    std::random_device rd; //shuffle
+    std::mt19937 gen(rd());
+    std::shuffle(samples.begin(), samples.end(), gen);
+
+    //iterate over batches
+    for (std::size_t i = 0; i < samples.size(); i += batchSize){
+        auto batchEnd = std::min(i + batchSize, samples.size()); //makes sure end of batch is within bounds of data
+        std::vector<TrainingSample> batch(samples.begin() + i, samples.begin() + batchEnd); //create batch from i to batchEnd
+
+        for (const auto& sample : batch) {//for each sample in batch
+            backPropogate(sample);
+        }
+    }
+}

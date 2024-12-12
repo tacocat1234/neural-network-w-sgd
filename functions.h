@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vector>
 
 const double lReluAlpha = 0.1;

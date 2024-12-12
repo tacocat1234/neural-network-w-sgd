@@ -1,13 +1,19 @@
+#pragma once
+
 #include "nodes.h"
 #include <vector>
 #include <intializer_list>
 #include <pair>
+#include <random>
+#include <cmath>
+#include <iterator>
+#include <unordered_map>
 
 using Layer = std::vector<Node>;
 using TrainingData = std::unordered_map<std::vector<double>, std::vector<double>>;
 using TrainingSample = std::pair<std::vector<double>, std::vector<double>>;
 using UnaryFunctionDouble = double(*)(double)
-using ActivationPair = std::pair<UnaryFunctionDouble, UnaryFunctionDouble)>;
+using ActivationPair = std::pair<UnaryFunctionDouble, UnaryFunctionDouble>;
 using LossFunction = double(*)(std::vector<double>, std::vector<double>);
 using std::size_t;
 
@@ -25,13 +31,13 @@ class NeuralNetwork{
         
         
 
-        void train(std::vector<TrainingData> data);
+        void train(TrainingData data, int batchSize = -1);
 
     private:
         LossFunction lossFunction;
         LossFunctionlossDerivative;
         std::vector<UnaryFunctionDouble> layerActivationDerivatives;
-        void backPropogate(std::vector<double> inputs);
+        void backPropogate(TrainingSample data);
         std::vector<Layer> nodes;
         std::vector<size_t> layerSizes;
         double learningRate;
