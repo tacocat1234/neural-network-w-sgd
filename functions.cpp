@@ -22,7 +22,7 @@ double sigmoidDerivative(double input){
 }
 
 double tanhDerivative(double input){
-    return 1.0 / (std::cosh(x) * std::cosh(x));
+    return 1.0 / (std::cosh(input) * std::cosh(input));
 }
 
 double reluDerivative(double input){
@@ -71,3 +71,30 @@ double lossBinaryCrossEntropy(std::vector<double> actual, std::vector<double> ex
     return -bce / actual.size();
 }
 
+std::vector<double> lossMSEderivative(std::vector<double> actual, std::vector<double> expected) {
+    if (actual.size() != expected.size()) {
+        throw std::invalid_argument("Vectors 'actual' and 'expected' must have the same size.");
+    }
+
+    std::vector<double> derivative(actual.size());
+    size_t N = actual.size();
+    for (size_t i = 0; i < N; ++i) {
+        derivative[i] = 2.0 * (actual[i] - expected[i]) / static_cast<double>(N);
+    }
+    return derivative;
+}
+
+std::vector<double> lossBinaryCrossEntropyDerivative(std::vector<double> actual, std::vector<double> expected) {
+    if (actual.size() != expected.size()) {
+        throw std::invalid_argument("Vectors 'actual' and 'expected' must have the same size.");
+    }
+
+    std::vector<double> derivative(actual.size());
+    for (size_t i = 0; i < actual.size(); ++i) {
+        if (actual[i] == 0 || actual[i] == 1) {
+            throw std::domain_error("Actual values must be strictly between 0 and 1 to avoid division by zero.");
+        }
+        derivative[i] = -(expected[i] / actual[i]) + ((1.0 - expected[i]) / (1.0 - actual[i]));
+    }
+    return derivative;
+}

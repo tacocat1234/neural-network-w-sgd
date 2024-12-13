@@ -1,10 +1,10 @@
 #include "nodes.h"
 
 Node::Node(Layer* incomingNodes, std::vector<double> incomingWeights, double bias, UnaryFunctionDouble activation) : bias(bias), activationFunction(activation){
-    if (incomingNodes.size() != incomingWeights.size()){
-        throw std::invalid_argument("Incoming Nodes and Weights size are not equal.")
+    if (incomingNodes->size() != incomingWeights.size()){
+        throw std::invalid_argument("Incoming Nodes and Weights size are not equal.");
     }
-    for (int i = 0; i < (*incomingNodes).size(); i++){
+    for (int i = 0; i < incomingNodes->size(); i++){
         incomingNodesWeights[&((*incomingNodes)[i])] = incomingWeights[i];
     }
 }
@@ -15,7 +15,7 @@ double Node::getValue(){
     return value;
 }
 
-double getWeightedSum(){
+double Node::getWeightedSum(){
     return preActivation;
 }
 
@@ -23,7 +23,7 @@ double Node::setValue(double newVal){
     value = newVal;
     return value;
 }
-double Node::getWeights(){
+std::unordered_map<Node*, double> Node::getWeights(){
     return incomingNodesWeights;
 }
 double Node::getBias(){
@@ -33,7 +33,7 @@ double Node::getBias(){
 double Node::calculateValue(){
     value = 0;
     for (const auto& pair : incomingNodesWeights){
-        value += pair.first.getValue() * pair.second;
+        value += pair.first->getValue() * pair.second;
     }
     value += bias;
     preActivation = value;
@@ -41,23 +41,26 @@ double Node::calculateValue(){
     return value;
 }
 
-double updateBias(double modifier){
+double Node::updateBias(double modifier){
     bias += modifier;
     return bias;
 }
 
-double updateWeight(double modifier, double key){
+double Node::updateWeight(double modifier, Node* key){
     incomingNodesWeights[key] -= modifier;
     return incomingNodesWeights[key];
 }
 
-std::unordered_map<Node*, double> updateWeights(std::vector<double> modifiers){
+std::unordered_map<Node*, double> Node::updateWeights(std::vector<double> modifiers){
     if (modifiers.size() != incomingNodesWeights.size()){
         throw std::invalid_argument("Update weights count not equal to number of weights present");
     }
 
-    for (int i = 0; i < modifiers.size(); i++){
-        incomingNodesWeights[i].second += modifiers[i];
+    auto modIt = modifiers.begin(); 
+    for (auto it = incomingNodesWeights.begin();
+        it != incomingNodesWeights.end() && modIt != modifiers.end(); 
+        ++it, ++modIt) {
+        it->second += *modIt;
     }
     return incomingNodesWeights;
 }

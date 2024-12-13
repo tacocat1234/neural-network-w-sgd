@@ -56,7 +56,13 @@ std::vector<size_t> NeuralNetwork::getSize(){
 }
 
 std::vector<double> NeuralNetwork::output(){
-    return nodes[nodes.size() - 1];
+    std::vector<double> output;
+    size_t i = 0;
+    for (auto& node : nodes[nodes.size() - 1]){
+        output[i] = node.getValue();
+        i++;
+    }
+    return output;
 }
 
 void NeuralNetwork::updateValues(){
@@ -67,7 +73,7 @@ void NeuralNetwork::updateValues(){
     }
 }
 
-void NeuralNetwork::passInputs(std::initializer_list<double> inputs){
+void NeuralNetwork::passInputs(std::vector<double> inputs){
     if (inputs.size() != nodes[0].size()){
         throw std::invalid_argument("The size of inputs and the amount of input nodes must be the same");
     }
@@ -76,13 +82,17 @@ void NeuralNetwork::passInputs(std::initializer_list<double> inputs){
     }
 }
 
+void NeuralNetwork::passInputs(std::initializer_list<double> inputs){
+    passInputs(std::vector<double>(inputs));
+}
+
 void NeuralNetwork::evaluate(std::vector<double> inputs){
     passInputs(inputs);
     updateValues();
 }
 
 void NeuralNetwork::evaluate(std::initializer_list<double> inputs){
-    evaluate()
+    evaluate(std::vector<double>(inputs));
 }
 
 void NeuralNetwork::backPropogate(TrainingSample data){
@@ -93,7 +103,7 @@ void NeuralNetwork::backPropogate(TrainingSample data){
 
     LayerValues prevWSumGradients; //previous weighted sum gradients
     LayerValues currentWSumGradients = std::vector<double>(layerSizes[layerSizes.size() - 1], 0.0); //current weighted sum gradients
-    double curWeightGradient
+    double curWeightGradient;
 
     std::vector<double> lossGradients = lossDerivative(output(), expectedOut);
 

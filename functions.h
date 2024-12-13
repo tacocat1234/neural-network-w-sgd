@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <stdexcept>
+#include <initializer_list>
 
 const double lReluAlpha = 0.1;
 
@@ -29,8 +31,8 @@ double leakyReluDerivative(double input);
 
 double lossMSE(std::vector<double> actual, std::vector<double> expected); //loss for regression
 
-double lossBinaryCrossEntropy(std::vector<double> actual, std::initializerlist<double> expected); //loss for binary categorization (assuming sigmoid)
+double lossBinaryCrossEntropy(std::vector<double> actual, std::initializer_list<double> expected); //loss for binary categorization (assuming sigmoid)
 
-double lossMSEderivative(std::vector<double> actual, std::vector<double> expected, size_t wRespectIndex);
+std::vector<double> lossMSEderivative(std::vector<double> actual, std::vector<double> expected);
 
-double lossBinaryCrossEntropyDerivative(std::vector<double> actual, std::vector<double> expected, size_t wRespectIndex);
+std::vector<double> lossBinaryCrossEntropyDerivative(std::vector<double> actual, std::vector<double> expected);
