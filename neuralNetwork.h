@@ -9,6 +9,8 @@
 #include <iterator>
 #include <unordered_map>
 #include <algorithm>
+#include <fstream>
+#include <string>
 
 using Layer = std::vector<Node>;
 using TrainingData = std::unordered_map<std::vector<double>, std::vector<double>>;
@@ -35,6 +37,9 @@ class NeuralNetwork{
         
 
         void train(TrainingData data, int batchSize = -1);
+
+        void downloadParameters();
+        void uploadParameters(std::string fileName);
 
     private:
         LossFunction lossFunction;

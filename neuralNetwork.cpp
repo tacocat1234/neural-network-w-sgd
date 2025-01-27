@@ -23,7 +23,7 @@ NeuralNetwork::NeuralNetwork(std::initializer_list<size_t> layerSizes,  std::ini
         // Determine number of incoming connections
         size_t numIncoming = prevLayer->size(); // Previous layer size
 
-        for (size_t i = 0; i < layerSize; ++i) {
+        for (size_t i = 0; i < layerSize; i++) {
             // Generate weights using Xavier initialization
             std::vector<double> weights;
             double bias = 0.0;
@@ -32,7 +32,7 @@ NeuralNetwork::NeuralNetwork(std::initializer_list<size_t> layerSizes,  std::ini
                 double xavierLimit = std::sqrt(6.0 / (numIncoming + layerSize));
                 std::uniform_real_distribution<double> dist(-xavierLimit, xavierLimit);
                 
-                for (size_t j = 0; j < numIncoming; ++j) {
+                for (size_t j = 0; j < numIncoming; j++) {
                     weights.push_back(dist(gen)); // Random weight
                 }
 
@@ -151,5 +151,76 @@ void NeuralNetwork::train(TrainingData data, int batchSize){
         for (const auto& sample : batch) {//for each sample in batch
             backPropogate(sample);
         }
+    }
+}
+
+void NeuralNetwork::downloadParameters(){
+    std::ofstream outFile("parameters.txt");
+    if (outFile.is_open()){
+        outFile << nodes.size() << "\n"; //write number of layers
+        for (auto& each : nodes){
+            outFile << each.size() << "\n"; //write number of nodes per layer
+        } 
+        for (auto& layer : nodes){ 
+            for (auto& node : layer){
+                outFile << node.getBias() << " ";
+                for (auto& pair : node.getWeights()){
+                    outFile << pair.second << " ";
+                }
+                outFile << "\n";
+            }
+        }
+        outFile.close();
+    } else{
+        std::cerr << "Unable to open file for writing" << std::endl;
+    }
+}
+
+void NeuralNetwork::uploadParameters(std::string fileName, std::initializer_list<ActivationPair> layerActivations){
+    std::ifstream inFile(fileName);
+    if (inFile.is_open()){
+        this->layerActivationDerivatives.clear();
+        this->nodes.clear();
+        for (const auto& pair : layerActivations){
+            this->layerActivationDerivatives.emplace_back(pair.second);
+        }
+
+        int layerCount;
+        inFile >> layerCount;
+        std::vector<int> layerSizes;
+        for (int i = 0; i < layerCount; i++){
+            inFile >> layerSizes[i];
+        } //read all layerSizes
+
+        Layer* prevLayer;
+        auto activationPtr = layerActivations.begin();
+        for (size_t layerSize : layerSizes) {
+            Layer layer;
+
+            // Determine number of incoming connections
+            size_t numIncoming = prevLayer->size(); // Previous layer size
+
+            for (size_t i = 0; i < layerSize; i++) {
+                std::vector<double> weights;
+                double bias;
+                inFile >> bias;
+                
+                if (numIncoming > 0) {
+                    double cWeight;
+                    for (size_t j = 0; j < numIncoming; j++) {
+                        inFile >> cWeight;
+                        weights.push_back(cWeight);
+                    }
+                }
+                layer.emplace_back(Node(prevLayer, weights, bias, (*activationPtr).first));  //correct
+            }
+
+            nodes.emplace_back(std::move(layer));
+            prevLayer = &nodes.back();
+            activationPtr++;
+        }
+        inFile.close();
+    } else{
+        std::cerr << "Unable to open file for reading" << std::endl;
     }
 }

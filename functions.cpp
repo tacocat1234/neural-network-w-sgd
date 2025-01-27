@@ -1,5 +1,6 @@
 #include "functions.h"
 #include <cmath>
+#include <set>
 
 //activation functions
 

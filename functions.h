@@ -1,8 +1,11 @@
 #pragma once
 
 #include <vector>
+#include <algorithm>
 #include <stdexcept>
+#include <string>
 #include <initializer_list>
+#include <unordered_map>
 
 const double lReluAlpha = 0.1;
 
@@ -36,3 +39,13 @@ double lossBinaryCrossEntropy(std::vector<double> actual, std::initializer_list<
 std::vector<double> lossMSEderivative(std::vector<double> actual, std::vector<double> expected);
 
 std::vector<double> lossBinaryCrossEntropyDerivative(std::vector<double> actual, std::vector<double> expected);
+
+std::vector<std::string> split(const std::string& str);
+
+std::string merge(const std::string& a, const std::string& b);
+
+std::unordered_map<std::string, int> getPairFrequencies(const std::vector<std::string>& tokens);
+
+void replacePair(std::vector<std::vector<std::string>>& tokens, const std::string& pair);
+
+std::vector<std::string> tokenize(std::string str);
