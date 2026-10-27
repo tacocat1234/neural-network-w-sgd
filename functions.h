@@ -1,10 +1,10 @@
 #pragma once
 
+#include <cmath>
 #include <vector>
 #include <algorithm>
 #include <stdexcept>
 #include <string>
-#include <initializer_list>
 #include <unordered_map>
 
 const double lReluAlpha = 0.1;
@@ -32,13 +32,13 @@ double leakyReluDerivative(double input);
 
 //loss functions
 
-double lossMSE(std::vector<double> actual, std::vector<double> expected); //loss for regression
+double lossMSE(const std::vector<double>& actual, const std::vector<double>& expected); //loss for regression
 
-double lossBinaryCrossEntropy(std::vector<double> actual, std::initializer_list<double> expected); //loss for binary categorization (assuming sigmoid)
+double lossBinaryCrossEntropy(const std::vector<double>& actual, const std::vector<double>& expected); //loss for binary categorization (assuming sigmoid)
 
-std::vector<double> lossMSEderivative(std::vector<double> actual, std::vector<double> expected);
+std::vector<double> lossMSEderivative(const std::vector<double>& actual, const std::vector<double>& expected);
 
-std::vector<double> lossBinaryCrossEntropyDerivative(std::vector<double> actual, std::vector<double> expected);
+std::vector<double> lossBinaryCrossEntropyDerivative(const std::vector<double>& actual, const std::vector<double>& expected);
 
 std::vector<std::string> split(const std::string& str);
 

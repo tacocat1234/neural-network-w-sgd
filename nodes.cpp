@@ -1,6 +1,6 @@
 #include "nodes.h"
 
-Node::Node(Layer* incomingNodes, std::vector<double> incomingWeights, double bias, UnaryFunctionDouble activation) : bias(bias), activationFunction(activation){
+Node::Node(Layer* incomingNodes, const std::vector<double>& incomingWeights, double bias, UnaryFunctionDouble activation) : bias(bias), activationFunction(activation){
     if (incomingNodes->size() != incomingWeights.size()){
         throw std::invalid_argument("Incoming Nodes and Weights size are not equal.");
     }
@@ -9,7 +9,7 @@ Node::Node(Layer* incomingNodes, std::vector<double> incomingWeights, double bia
     }
 }
 
-Node::Node(std::unordered_map<Node*, double> incomingNodesWeights, double bias, UnaryFunctionDouble activation) : incomingNodesWeights(incomingNodesWeights), bias(bias), activationFunction(activation) {}
+Node::Node(std::unordered_map<Node*, double>& incomingNodesWeights, double bias, UnaryFunctionDouble activation) : incomingNodesWeights(incomingNodesWeights), bias(bias), activationFunction(activation) {}
 
 double Node::getValue(){
     return value;
@@ -23,7 +23,7 @@ double Node::setValue(double newVal){
     value = newVal;
     return value;
 }
-std::unordered_map<Node*, double> Node::getWeights(){
+const std::unordered_map<Node*, double>& Node::getWeights() const{
     return incomingNodesWeights;
 }
 double Node::getBias(){
@@ -42,16 +42,18 @@ double Node::calculateValue(){
 }
 
 double Node::updateBias(double modifier){
-    bias += modifier;
+    bias -= modifier;
     return bias;
 }
 
 double Node::updateWeight(double modifier, Node* key){
-    incomingNodesWeights[key] -= modifier;
-    return incomingNodesWeights[key];
+    // only look up from hash table once, to improve performance.
+    auto& weight = incomingNodesWeights[key];
+    weight -= modifier;
+    return weight;
 }
 
-std::unordered_map<Node*, double> Node::updateWeights(std::vector<double> modifiers){
+const std::unordered_map<Node*, double>& Node::updateWeights(const std::vector<double>& modifiers){
     if (modifiers.size() != incomingNodesWeights.size()){
         throw std::invalid_argument("Update weights count not equal to number of weights present");
     }

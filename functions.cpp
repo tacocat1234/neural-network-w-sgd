@@ -36,7 +36,7 @@ double leakyReluDerivative(double input){
 
 //loss functions 
 
-double lossMSE(std::vector<double> actual, std::vector<double> expected){
+double lossMSE(const std::vector<double>& actual, const std::vector<double>& expected){
     if (actual.size() != expected.size()) {
         throw std::invalid_argument("Size mismatch between actual and expected values.");
     }
@@ -53,7 +53,7 @@ double lossMSE(std::vector<double> actual, std::vector<double> expected){
     return mse / actual.size();
 }
 
-double lossBinaryCrossEntropy(std::vector<double> actual, std::vector<double> expected){
+double lossBinaryCrossEntropy(const std::vector<double>& actual, const std::vector<double>& expected){
     if (actual.size() != expected.size()) {
         throw std::invalid_argument("Size mismatch between actual and expected values.");
     }
@@ -72,7 +72,7 @@ double lossBinaryCrossEntropy(std::vector<double> actual, std::vector<double> ex
     return -bce / actual.size();
 }
 
-std::vector<double> lossMSEderivative(std::vector<double> actual, std::vector<double> expected) {
+std::vector<double> lossMSEderivative(const std::vector<double>& actual, const std::vector<double>& expected) {
     if (actual.size() != expected.size()) {
         throw std::invalid_argument("Vectors 'actual' and 'expected' must have the same size.");
     }
@@ -85,7 +85,7 @@ std::vector<double> lossMSEderivative(std::vector<double> actual, std::vector<do
     return derivative;
 }
 
-std::vector<double> lossBinaryCrossEntropyDerivative(std::vector<double> actual, std::vector<double> expected) {
+std::vector<double> lossBinaryCrossEntropyDerivative(const std::vector<double>& actual, const std::vector<double>& expected) {
     if (actual.size() != expected.size()) {
         throw std::invalid_argument("Vectors 'actual' and 'expected' must have the same size.");
     }

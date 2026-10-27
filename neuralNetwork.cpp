@@ -1,5 +1,7 @@
 #include "neuralNetwork.h"
 
+#include <iostream>
+
 
 using Weights = std::vector<double>;
 using LayerWeights = std::vector<Weights>;
@@ -15,7 +17,8 @@ NeuralNetwork::NeuralNetwork(std::initializer_list<size_t> layerSizes,  std::ini
         this->layerActivationDerivatives.emplace_back(pair.second);
     }
 
-    Layer* prevLayer;
+    Layer inputLayer;
+    Layer* prevLayer = &inputLayer;
     auto activationPtr = layerActivations.begin();
     for (size_t layerSize : layerSizes) {
         Layer layer;
@@ -59,21 +62,22 @@ std::vector<double> NeuralNetwork::output(){
     std::vector<double> output;
     size_t i = 0;
     for (auto& node : nodes[nodes.size() - 1]){
-        output[i] = node.getValue();
+        output.push_back(node.getValue());
         i++;
     }
     return output;
 }
 
 void NeuralNetwork::updateValues(){
-    for (auto& layer : nodes){
-        for (auto& node : layer){
+    // skip layer 0, the input layer
+    for (int i = 1; i < nodes.size(); i++){
+        for (auto& node : nodes[i]){
             node.calculateValue();
         }
     }
 }
 
-void NeuralNetwork::passInputs(std::vector<double> inputs){
+void NeuralNetwork::passInputs(const std::vector<double>& inputs){
     if (inputs.size() != nodes[0].size()){
         throw std::invalid_argument("The size of inputs and the amount of input nodes must be the same");
     }
@@ -86,7 +90,7 @@ void NeuralNetwork::passInputs(std::initializer_list<double> inputs){
     passInputs(std::vector<double>(inputs));
 }
 
-void NeuralNetwork::evaluate(std::vector<double> inputs){
+void NeuralNetwork::evaluate(const std::vector<double>& inputs){
     passInputs(inputs);
     updateValues();
 }
@@ -95,9 +99,13 @@ void NeuralNetwork::evaluate(std::initializer_list<double> inputs){
     evaluate(std::vector<double>(inputs));
 }
 
-void NeuralNetwork::backPropogate(TrainingSample data){
-    LayerValues inputs = data.first;
-    LayerValues expectedOut = data.second;
+void NeuralNetwork::backPropagate(const TrainingSample& data){
+    if (layerSizes.size() == 1){
+        return;
+    }
+
+    const LayerValues& inputs = data.first;
+    const LayerValues& expectedOut = data.second;
 
     evaluate(inputs);
 
@@ -107,19 +115,19 @@ void NeuralNetwork::backPropogate(TrainingSample data){
 
     std::vector<double> lossGradients = lossDerivative(output(), expectedOut);
 
-    for (int i = layerSizes.size() - 1; i >= 0; i--){ //for each layer, backward
+    for (int i = layerSizes.size() - 1; i > 0; i--){ //for each layer, backward
 
         for (int j = 0; j < layerSizes[i]; j++){ //for each node in layer
 
             if (i != layerSizes.size() - 1) {
                 for (int k = 0; k < layerSizes[i + 1]; k++) {//for each in next layer
-                    currentWSumGradients[i] += prevWSumGradients[k] * nodes[i + 1][k].getWeights()[&(nodes[i][j])];
+                    currentWSumGradients[j] += prevWSumGradients[k] * nodes[i + 1][k].getWeights().at(&(nodes[i][j]));
                 }//            ___  * ∂a_n/∂z_n (activationDerivative(z))
                 currentWSumGradients[j] *= layerActivationDerivatives[i](nodes[i][j].getWeightedSum()); //multiply by ∂a_n/∂preAct_n
             } else {
-                currentWSumGradients[j] = lossGradients[i] * layerActivationDerivatives[i](nodes[i][j].getWeightedSum()); //partial derivative of loss w/resp. preActivation val of node in output layer1`
+                currentWSumGradients[j] = lossGradients[j] * layerActivationDerivatives[i](nodes[i][j].getWeightedSum()); //partial derivative of loss w/resp. preActivation val of node in output layer1`
             }
-            nodes[i][j].updateBias(currentWSumGradients[i] * learningRate);
+            nodes[i][j].updateBias(currentWSumGradients[j] * learningRate);
 
             if (i > 0){
                 for (int k = 0; k < layerSizes[i - 1]; k++){ //for each node in incomingLayer, i.e. for each weight to the node
@@ -133,11 +141,16 @@ void NeuralNetwork::backPropogate(TrainingSample data){
     }
 }//bias gradients are equivalent to the preActivation gradients at any node n
 
-void NeuralNetwork::train(TrainingData data, int batchSize){
+void NeuralNetwork::train(const TrainingData& data, int batchSize){
     if (batchSize <= 0 || batchSize > data.size()) {
         batchSize = data.size(); // Use all data if batchSize is invalid
     }
-    std::vector<TrainingSample> samples(data.begin(), data.end()); //conver to vector
+    //pointers into data so shuffling doesn't copy the samples
+    std::vector<const TrainingData::value_type*> samples;
+    samples.reserve(data.size());
+    for (const auto& sample : data){
+        samples.push_back(&sample);
+    }
 
     std::random_device rd; //shuffle
     std::mt19937 gen(rd());
@@ -146,10 +159,9 @@ void NeuralNetwork::train(TrainingData data, int batchSize){
     //iterate over batches
     for (std::size_t i = 0; i < samples.size(); i += batchSize){
         auto batchEnd = std::min(i + batchSize, samples.size()); //makes sure end of batch is within bounds of data
-        std::vector<TrainingSample> batch(samples.begin() + i, samples.begin() + batchEnd); //create batch from i to batchEnd
 
-        for (const auto& sample : batch) {//for each sample in batch
-            backPropogate(sample);
+        for (std::size_t s = i; s < batchEnd; s++) {//for each sample in batch
+            backPropagate(*samples[s]);
         }
     }
 }
@@ -161,11 +173,14 @@ void NeuralNetwork::downloadParameters(){
         for (auto& each : nodes){
             outFile << each.size() << "\n"; //write number of nodes per layer
         } 
-        for (auto& layer : nodes){ 
-            for (auto& node : layer){
+        for (int i = 0; i < nodes.size(); i++){
+            for (auto& node : nodes[i]){
                 outFile << node.getBias() << " ";
-                for (auto& pair : node.getWeights()){
-                    outFile << pair.second << " ";
+                if (i > 0){
+                    const auto& weights = node.getWeights();
+                    for (auto& prevNode : nodes[i - 1]){
+                        outFile << weights.at(&prevNode) << " ";
+                    }
                 }
                 outFile << "\n";
             }
@@ -176,7 +191,7 @@ void NeuralNetwork::downloadParameters(){
     }
 }
 
-void NeuralNetwork::uploadParameters(std::string fileName, std::initializer_list<ActivationPair> layerActivations){
+void NeuralNetwork::uploadParameters(const std::string& fileName, std::initializer_list<ActivationPair> layerActivations){
     std::ifstream inFile(fileName);
     if (inFile.is_open()){
         this->layerActivationDerivatives.clear();
@@ -188,11 +203,14 @@ void NeuralNetwork::uploadParameters(std::string fileName, std::initializer_list
         int layerCount;
         inFile >> layerCount;
         std::vector<int> layerSizes;
+        layerSizes.resize(layerCount);
         for (int i = 0; i < layerCount; i++){
             inFile >> layerSizes[i];
         } //read all layerSizes
 
-        Layer* prevLayer;
+        Layer inputLayer;
+        Layer* prevLayer = &inputLayer;
+        this->nodes.reserve(layerSizes.size());
         auto activationPtr = layerActivations.begin();
         for (size_t layerSize : layerSizes) {
             Layer layer;

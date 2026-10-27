@@ -2,6 +2,9 @@
 
 #include <vector>
 
+// =============================
+// WORK IN PROGRESS
+// =============================
 struct StateActionReward{
     std::vector<double> state; //inputs to network
     std::vector<double> action; //outputs of network
@@ -16,7 +19,7 @@ class PPO{
     public:
         PPO();
         static double loss();
-        static double getDiscountedRewards(Trajectory trajectory, double discountFactor);
+        static double getDiscountedRewards(const Trajectory& trajectory, double discountFactor);
         static double BaselineEstimate();
     private:
 
